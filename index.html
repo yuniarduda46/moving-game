@@ -1,0 +1,1546 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MOVE TO ANSWER! - 2 Choice Motion Learning Game</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Fredoka+One&family=Outfit:wght@400;600;800&display=swap" rel="stylesheet">
+    <!-- FontAwesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <!-- MediaPipe Pose & Camera Utils CDN -->
+    <script src="https://cdn.jsdelivr.net/npm/@mediapipe/camera_utils/camera_utils.js" crossorigin="anonymous"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@mediapipe/pose/pose.js" crossorigin="anonymous"></script>
+
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        fredoka: ['"Fredoka One"', 'cursive'],
+                        outfit: ['Outfit', 'sans-serif'],
+                    },
+                    colors: {
+                        brand: {
+                            purple: '#6C5CE7',
+                            yellow: '#FDCB6E',
+                            pink: '#FD79A8',
+                            blue: '#0984E3',
+                            green: '#00B894',
+                            dark: '#2D3436',
+                            card: '#0F172A',
+                        }
+                    },
+                    animation: {
+                        'bounce-slow': 'bounce 2s infinite',
+                        'pulse-fast': 'pulse 0.8s cubic-bezier(0.4, 0, 0.6, 1) infinite',
+                    }
+                }
+            }
+        }
+    </script>
+
+    <style>
+        body {
+            font-family: 'Outfit', sans-serif;
+            background: radial-gradient(circle at center, #1e1b4b, #0f172a);
+            color: #ffffff;
+            user-select: none;
+            overflow-x: hidden;
+        }
+
+        .arcade-font {
+            font-family: 'Fredoka One', cursive;
+        }
+
+        .glass-panel {
+            background: rgba(30, 41, 59, 0.75);
+            backdrop-filter: blur(12px);
+            border: 2px solid rgba(255, 255, 255, 0.1);
+        }
+
+        /* Custom Scrollbar for Teacher Mode */
+        ::-webkit-scrollbar {
+            width: 8px;
+        }
+        ::-webkit-scrollbar-track {
+            background: rgba(15, 23, 42, 0.6);
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #6C5CE7;
+            border-radius: 4px;
+        }
+    </style>
+</head>
+<body class="min-h-screen flex flex-col justify-between items-center relative overflow-hidden">
+
+    <!-- Confetti Canvas overlay -->
+    <canvas id="confetti-canvas" class="fixed inset-0 pointer-events-none z-50"></canvas>
+
+    <!-- Notification Toast -->
+    <div id="toast" class="fixed top-5 right-5 bg-yellow-400 text-slate-900 px-6 py-3 rounded-xl font-bold text-lg shadow-2xl transition-all duration-300 transform translate-x-full z-50 flex items-center gap-3">
+        <i class="fa-solid fa-bell"></i>
+        <span id="toast-message">Notifikasi</span>
+    </div>
+
+    <!-- ==================== HEADER BAR ==================== -->
+    <header class="w-full max-w-7xl px-4 py-3 flex justify-between items-center z-10 border-b border-slate-700/50">
+        <div class="flex items-center gap-3 cursor-pointer" onclick="showScreen('home-screen')">
+            <div class="bg-gradient-to-tr from-purple-600 to-pink-500 text-white p-3 rounded-2xl shadow-lg">
+                <i class="fa-solid fa-person-running text-2xl"></i>
+            </div>
+            <div>
+                <h1 class="arcade-font text-2xl md:text-3xl tracking-wide bg-clip-text text-transparent bg-gradient-to-r from-yellow-400 via-pink-400 to-purple-400">MOVE TO ANSWER!</h1>
+                <p class="text-xs text-slate-400 tracking-wider font-semibold">THINK FAST, MOVE SMART, LEARN MORE!</p>
+            </div>
+        </div>
+        <div class="flex gap-2">
+            <button onclick="toggleAudio()" id="audio-btn" class="glass-panel px-4 py-2 rounded-xl text-yellow-400 hover:bg-slate-700 transition font-semibold text-sm flex items-center gap-2">
+                <i class="fa-solid fa-volume-high"></i> <span class="hidden sm:inline">Audio</span>
+            </button>
+            <button onclick="openModal('how-to-modal')" class="glass-panel px-4 py-2 rounded-xl text-cyan-400 hover:bg-slate-700 transition font-semibold text-sm flex items-center gap-2">
+                <i class="fa-solid fa-circle-question"></i> <span class="hidden sm:inline">Bantuan</span>
+            </button>
+        </div>
+    </header>
+
+    <!-- ==================== MAIN CONTENT CONTAINERS ==================== -->
+    <main class="w-full max-w-7xl px-4 py-4 flex-1 flex flex-col justify-center items-center z-10">
+
+        <!-- 1. HOME SCREEN -->
+        <section id="home-screen" class="w-full max-w-4xl flex flex-col items-center text-center py-6">
+            <div class="relative mb-6">
+                <div class="w-28 h-28 md:w-36 md:h-36 bg-gradient-to-tr from-pink-500 via-purple-500 to-cyan-400 rounded-full flex items-center justify-center animate-bounce-slow shadow-2xl border-4 border-white/20">
+                    <i class="fa-solid fa-child-reaching text-6xl md:text-7xl text-white"></i>
+                </div>
+                <span class="absolute -bottom-2 -right-2 bg-yellow-400 text-slate-900 text-xs font-black px-3 py-1 rounded-full uppercase tracking-wider border-2 border-slate-900 shadow">2-Zone Motion Control</span>
+            </div>
+
+            <h2 class="arcade-font text-4xl md:text-6xl mb-2 text-white drop-shadow-md">
+                BERGESER KE KIRI ATAU KANAN!
+            </h2>
+            <p class="text-slate-300 text-base md:text-lg max-w-xl mb-8">
+                Pindah posisi tubuhmu ke <strong>Sebelah Kanan (Jawaban A)</strong> atau <strong>Sebelah Kiri (Jawaban B)</strong> di depan kamera!
+            </p>
+
+            <!-- Student Name Input & Settings Card -->
+            <div class="glass-panel w-full max-w-md p-6 rounded-3xl shadow-2xl mb-8 text-left space-y-4">
+                <div>
+                    <label class="block text-sm font-bold text-slate-300 mb-2 uppercase tracking-wide">
+                        <i class="fa-solid fa-user-astronaut text-purple-400 mr-2"></i> Nama Siswa:
+                    </label>
+                    <input type="text" id="player-name" placeholder="Masukkan nama kamu..." class="w-full bg-slate-900/80 border border-slate-600 rounded-xl px-4 py-3 text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-purple-500 font-semibold text-lg">
+                </div>
+
+                <div>
+                    <label class="block text-sm font-bold text-slate-300 mb-2 uppercase tracking-wide">
+                        <i class="fa-solid fa-gauge-high text-yellow-400 mr-2"></i> Tingkat Kesulitan:
+                    </label>
+                    <div class="grid grid-cols-3 gap-2">
+                        <button type="button" onclick="setDifficulty('easy')" id="diff-easy" class="diff-btn py-2.5 rounded-xl font-bold text-sm bg-emerald-600 text-white shadow-lg border-2 border-emerald-400">Easy (15s)</button>
+                        <button type="button" onclick="setDifficulty('medium')" id="diff-medium" class="diff-btn py-2.5 rounded-xl font-bold text-sm bg-slate-800 text-slate-300 hover:bg-slate-700">Medium (10s)</button>
+                        <button type="button" onclick="setDifficulty('hard')" id="diff-hard" class="diff-btn py-2.5 rounded-xl font-bold text-sm bg-slate-800 text-slate-300 hover:bg-slate-700">Hard (7s)</button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Action Buttons -->
+            <div class="flex flex-col sm:flex-row gap-4 w-full max-w-md justify-center">
+                <button onclick="startGame()" class="arcade-font bg-gradient-to-r from-emerald-400 to-teal-500 hover:from-emerald-500 hover:to-teal-600 text-slate-900 text-xl px-8 py-4 rounded-2xl shadow-xl transform hover:-translate-y-1 transition duration-200 flex items-center justify-center gap-3 w-full sm:w-auto flex-1">
+                    <i class="fa-solid fa-play text-2xl"></i> START GAME
+                </button>
+            </div>
+
+            <div class="flex gap-4 mt-6">
+                <button onclick="openTeacherMode()" class="text-xs font-bold text-slate-400 hover:text-purple-400 transition flex items-center gap-1 bg-slate-800/50 px-4 py-2 rounded-lg">
+                    <i class="fa-solid fa-chalkboard-user"></i> TEACHER MODE
+                </button>
+                <button onclick="openModal('leaderboard-modal')" class="text-xs font-bold text-slate-400 hover:text-yellow-400 transition flex items-center gap-1 bg-slate-800/50 px-4 py-2 rounded-lg">
+                    <i class="fa-solid fa-trophy"></i> LEADERBOARD
+                </button>
+            </div>
+        </section>
+
+        <!-- 2. GAME PLAY SCREEN -->
+        <section id="game-screen" class="w-full max-w-6xl flex flex-col items-center hidden">
+            <!-- Top Dashboard Bar -->
+            <div class="w-full glass-panel p-4 rounded-2xl mb-3 flex flex-wrap justify-between items-center gap-3">
+                <div class="flex items-center gap-4">
+                    <div class="bg-purple-900/60 border border-purple-500/40 px-3 py-1.5 rounded-xl text-center">
+                        <span class="text-xs text-purple-300 block font-bold uppercase">Soal</span>
+                        <span id="question-progress" class="arcade-font text-lg text-white">1 / 5</span>
+                    </div>
+                    <div class="bg-yellow-900/60 border border-yellow-500/40 px-3 py-1.5 rounded-xl text-center">
+                        <span class="text-xs text-yellow-300 block font-bold uppercase">Skor</span>
+                        <span id="game-score" class="arcade-font text-lg text-yellow-400">0</span>
+                    </div>
+                    <div class="bg-emerald-900/60 border border-emerald-500/40 px-3 py-1.5 rounded-xl text-center">
+                        <span class="text-xs text-emerald-300 block font-bold uppercase">Streak</span>
+                        <span id="game-streak" class="arcade-font text-lg text-emerald-400">0🔥</span>
+                    </div>
+                </div>
+
+                <!-- Timer Bar -->
+                <div class="flex-1 max-w-xs mx-2">
+                    <div class="flex justify-between text-xs font-bold mb-1">
+                        <span class="text-slate-300"><i class="fa-solid fa-clock text-pink-400"></i> WAKTU</span>
+                        <span id="timer-text" class="text-pink-400 font-mono text-sm">15s</span>
+                    </div>
+                    <div class="w-full bg-slate-800 h-3 rounded-full overflow-hidden p-0.5 border border-slate-700">
+                        <div id="timer-bar" class="bg-gradient-to-r from-pink-500 to-purple-500 h-full rounded-full transition-all duration-200" style="width: 100%;"></div>
+                    </div>
+                </div>
+
+                <div class="flex items-center gap-2">
+                    <button onclick="toggleCameraMirror()" class="bg-slate-800 hover:bg-slate-700 text-slate-300 p-2 rounded-xl text-xs font-bold border border-slate-700 flex items-center gap-1" title="Mirror Kamera">
+                        <i class="fa-solid fa-arrows-rotate"></i> Mirror
+                    </button>
+                    <button onclick="recalibratePose()" class="bg-purple-800/70 hover:bg-purple-700 text-purple-200 p-2 rounded-xl text-xs font-bold border border-purple-500/50 flex items-center gap-1">
+                        <i class="fa-solid fa-bullseye"></i> Kalibrasi
+                    </button>
+                </div>
+            </div>
+
+            <!-- Question Display Banner -->
+            <div class="w-full bg-gradient-to-r from-purple-900/90 via-slate-900/90 to-purple-900/90 border-2 border-purple-500/50 rounded-2xl p-4 md:p-6 mb-4 text-center shadow-2xl relative">
+                <span id="subject-tag" class="absolute top-2 left-4 text-[10px] uppercase tracking-widest font-black px-2.5 py-0.5 rounded-full bg-purple-600 text-white">IPA</span>
+                <h3 id="question-text" class="arcade-font text-xl md:text-2xl text-yellow-300 mt-2">
+                    Memuat pertanyaan...
+                </h3>
+            </div>
+
+            <!-- Camera Video & 2 Zones Overlay Area (A: Right, B: Left) -->
+            <div class="relative w-full aspect-[16/9] max-h-[520px] bg-slate-950 rounded-3xl overflow-hidden border-4 border-slate-700 shadow-2xl flex items-center justify-center">
+                <!-- Hidden HTML Video Element -->
+                <video id="webcam-video" class="hidden" playsinline></video>
+                
+                <!-- Main Interactive Render Canvas -->
+                <canvas id="game-canvas" class="w-full h-full object-cover"></canvas>
+
+                <!-- Status Overlay Signal -->
+                <div id="camera-loading" class="absolute inset-0 bg-slate-900/90 flex flex-col items-center justify-center z-20 space-y-4">
+                    <div class="w-16 h-16 border-4 border-purple-500 border-t-transparent rounded-full animate-spin"></div>
+                    <p class="text-slate-300 font-bold animate-pulse" id="camera-status-text">Mengakses Kamera Laptop & Memuat Model Pose AI...</p>
+                    <p class="text-xs text-slate-500 max-w-xs text-center">Pastikan izin webcam diberikan pada browser Anda.</p>
+                </div>
+
+                <!-- Simulation Mode Warning Badge -->
+                <div id="simulation-badge" class="hidden absolute top-4 left-4 bg-orange-600/90 text-white px-3 py-1 rounded-full text-xs font-bold z-30 flex items-center gap-2 shadow-lg">
+                    <i class="fa-solid fa-gamepad"></i> Mode Simulasi Mouse/Keyboard
+                </div>
+            </div>
+
+            <!-- Lock Answer Indicator Bar -->
+            <div class="w-full max-w-md mt-4 glass-panel p-3 rounded-2xl flex items-center gap-3">
+                <span class="text-xs font-bold text-slate-300 whitespace-nowrap"><i class="fa-solid fa-lock text-yellow-400"></i> DWELL HOLD (2 DETIK):</span>
+                <div class="w-full bg-slate-950 h-4 rounded-full overflow-hidden p-0.5 border border-slate-700">
+                    <div id="hold-progress-bar" class="bg-yellow-400 h-full rounded-full transition-all duration-75" style="width: 0%;"></div>
+                </div>
+                <span id="hold-target-name" class="text-xs font-black text-yellow-400 w-12 text-center">-</span>
+            </div>
+        </section>
+
+        <!-- 3. RESULT / GAME OVER SCREEN -->
+        <section id="result-screen" class="w-full max-w-3xl glass-panel p-6 md:p-8 rounded-3xl text-center hidden shadow-2xl my-4">
+            <div class="inline-block p-4 bg-yellow-400/20 rounded-full mb-3 text-yellow-400">
+                <i class="fa-solid fa-award text-5xl md:text-6xl"></i>
+            </div>
+            
+            <h2 class="arcade-font text-3xl md:text-5xl text-white mb-1">HASIL PERMAINAN</h2>
+            <p id="result-player-name" class="text-purple-300 text-lg font-bold mb-6">Pemain: Siswa hebat</p>
+
+            <!-- Badge / Predicate Banner -->
+            <div class="bg-gradient-to-r from-purple-800 to-pink-800 p-4 rounded-2xl border border-purple-400/40 mb-6 shadow-lg">
+                <span class="text-xs uppercase tracking-widest text-purple-200 block font-bold">PREDIKAT PENCAPAIAN</span>
+                <h3 id="result-badge" class="arcade-font text-2xl md:text-4xl text-yellow-300 my-1">GRANDMASTER THINKER</h3>
+                <p id="result-motivation" class="text-sm text-slate-200 italic">"Luar biasa! Kamu sangat cepat dan tepat dalam memproses informasi!"</p>
+            </div>
+
+            <!-- Stats Grid -->
+            <div class="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-8">
+                <div class="bg-slate-900/80 p-3 rounded-xl border border-slate-700">
+                    <span class="text-xs text-slate-400 block font-bold">TOTAL SKOR</span>
+                    <span id="res-score" class="arcade-font text-2xl text-yellow-400">0</span>
+                </div>
+                <div class="bg-slate-900/80 p-3 rounded-xl border border-slate-700">
+                    <span class="text-xs text-slate-400 block font-bold">BENAR / SALAH</span>
+                    <span id="res-correct" class="arcade-font text-2xl text-emerald-400">0/0</span>
+                </div>
+                <div class="bg-slate-900/80 p-3 rounded-xl border border-slate-700">
+                    <span class="text-xs text-slate-400 block font-bold">AKURASI</span>
+                    <span id="res-accuracy" class="arcade-font text-2xl text-cyan-400">0%</span>
+                </div>
+                <div class="bg-slate-900/80 p-3 rounded-xl border border-slate-700">
+                    <span class="text-xs text-slate-400 block font-bold">WAKTU PER SOAL</span>
+                    <span id="res-avg-time" class="arcade-font text-2xl text-pink-400">0s</span>
+                </div>
+            </div>
+
+            <!-- Action Buttons -->
+            <div class="flex flex-col sm:flex-row justify-center gap-4">
+                <button onclick="startGame()" class="arcade-font bg-gradient-to-r from-emerald-400 to-teal-500 text-slate-900 px-6 py-3.5 rounded-xl shadow-lg hover:scale-105 transition flex items-center justify-center gap-2">
+                    <i class="fa-solid fa-rotate-right"></i> MAIN LAGI
+                </button>
+                <button onclick="showScreen('home-screen')" class="arcade-font bg-slate-800 text-white border border-slate-600 px-6 py-3.5 rounded-xl hover:bg-slate-700 transition flex items-center justify-center gap-2">
+                    <i class="fa-solid fa-house"></i> MENU UTAMA
+                </button>
+            </div>
+        </section>
+
+    </main>
+
+    <!-- ==================== MODALS ==================== -->
+
+    <!-- 1. TEACHER MODE MODAL / PANEL -->
+    <div id="teacher-modal" class="fixed inset-0 bg-slate-950/80 backdrop-blur-md z-50 flex items-center justify-center hidden p-4">
+        <div class="bg-slate-900 border-2 border-purple-500/50 w-full max-w-4xl max-h-[90vh] rounded-3xl p-6 flex flex-col shadow-2xl overflow-hidden">
+            <!-- Header -->
+            <div class="flex justify-between items-center pb-4 border-b border-slate-800">
+                <div class="flex items-center gap-3">
+                    <i class="fa-solid fa-chalkboard-user text-2xl text-purple-400"></i>
+                    <h3 class="arcade-font text-2xl text-white">TEACHER MODE - BANK SOAL (2 PILIHAN)</h3>
+                </div>
+                <button onclick="closeModal('teacher-modal')" class="text-slate-400 hover:text-white p-2 text-xl">
+                    <i class="fa-solid fa-xmark"></i>
+                </button>
+            </div>
+
+            <!-- Body Tabs / Form & List -->
+            <div class="flex-1 overflow-y-auto py-4 space-y-6 pr-2">
+                <!-- Add Question Form -->
+                <div class="bg-slate-950 p-4 rounded-2xl border border-slate-800 space-y-3">
+                    <h4 id="form-title" class="text-sm font-bold text-yellow-400 uppercase tracking-wide">
+                        <i class="fa-solid fa-plus-circle"></i> Tambah Pertanyaan Baru (A & B)
+                    </h4>
+
+                    <input type="hidden" id="edit-q-id" value="">
+                    <div>
+                        <label class="block text-xs font-bold text-slate-400 mb-1">Pertanyaan / Soal:</label>
+                        <input type="text" id="q-text" placeholder="Contoh: Apakah Matahari merupakan sebuah Bintang?" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-sm text-white focus:outline-none focus:border-purple-500">
+                    </div>
+
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                        <div>
+                            <label class="block text-xs font-bold text-blue-400 mb-1">Pilihan A (Sebelah Kanan Layar):</label>
+                            <input type="text" id="q-opt-a" placeholder="Contoh: Ya / Benar" class="w-full bg-slate-900 border border-blue-500/50 rounded-xl px-3 py-2 text-sm text-white">
+                        </div>
+                        <div>
+                            <label class="block text-xs font-bold text-pink-400 mb-1">Pilihan B (Sebelah Kiri Layar):</label>
+                            <input type="text" id="q-opt-b" placeholder="Contoh: Tidak / Salah" class="w-full bg-slate-900 border border-pink-500/50 rounded-xl px-3 py-2 text-sm text-white">
+                        </div>
+                    </div>
+
+                    <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                        <div>
+                            <label class="block text-xs font-bold text-slate-400 mb-1">Kunci Jawaban Benar:</label>
+                            <select id="q-correct" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-sm text-yellow-400 font-bold">
+                                <option value="A">Jawaban A (Kanan)</option>
+                                <option value="B">Jawaban B (Kiri)</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="block text-xs font-bold text-slate-400 mb-1">Mata Pelajaran:</label>
+                            <input type="text" id="q-subject" placeholder="IPA / Math / Umum" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-sm text-white">
+                        </div>
+                        <div>
+                            <label class="block text-xs font-bold text-slate-400 mb-1">Tingkat Kesulitan:</label>
+                            <select id="q-diff" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-sm text-white">
+                                <option value="easy">Easy</option>
+                                <option value="medium">Medium</option>
+                                <option value="hard">Hard</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div>
+                        <label class="block text-xs font-bold text-slate-400 mb-1">Pembahasan Singkat:</label>
+                        <input type="text" id="q-explanation" placeholder="Penjelasan singkat setelah siswa menjawab..." class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-sm text-white">
+                    </div>
+
+                    <div class="flex justify-end gap-2 pt-2">
+                        <button type="button" onclick="resetQuestionForm()" class="px-4 py-2 bg-slate-800 text-slate-300 rounded-xl text-xs font-bold hover:bg-slate-700">Batal / Reset</button>
+                        <button type="button" onclick="saveQuestion()" class="px-5 py-2 bg-purple-600 text-white rounded-xl text-xs font-bold hover:bg-purple-500 shadow-lg flex items-center gap-2">
+                            <i class="fa-solid fa-floppy-disk"></i> Simpan Soal
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Questions List Table -->
+                <div>
+                    <div class="flex justify-between items-center mb-2">
+                        <h4 class="text-sm font-bold text-slate-300 uppercase tracking-wide">Daftar Soal Tersimpan (<span id="question-count">0</span>)</h4>
+                        <button onclick="resetDefaultQuestions()" class="text-xs text-pink-400 hover:text-pink-300 underline font-bold">Reset ke Soal Default SMP</button>
+                    </div>
+                    <div class="bg-slate-950 rounded-2xl border border-slate-800 overflow-hidden">
+                        <div class="overflow-x-auto">
+                            <table class="w-full text-left text-xs text-slate-300">
+                                <thead class="bg-slate-900 text-slate-400 font-bold uppercase border-b border-slate-800">
+                                    <tr>
+                                        <th class="p-3">Soal</th>
+                                        <th class="p-3">Subjek</th>
+                                        <th class="p-3">Kunci</th>
+                                        <th class="p-3">Aksi</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="questions-table-body" class="divide-y divide-slate-800">
+                                    <!-- Dynamic Rows -->
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Footer -->
+            <div class="pt-4 border-t border-slate-800 flex justify-end">
+                <button onclick="closeModal('teacher-modal')" class="px-6 py-2.5 bg-slate-800 text-white font-bold rounded-xl hover:bg-slate-700 text-sm">Tutup Teacher Mode</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 2. LEADERBOARD MODAL -->
+    <div id="leaderboard-modal" class="fixed inset-0 bg-slate-950/80 backdrop-blur-md z-50 flex items-center justify-center hidden p-4">
+        <div class="bg-slate-900 border-2 border-yellow-500/50 w-full max-w-xl rounded-3xl p-6 flex flex-col shadow-2xl">
+            <div class="flex justify-between items-center pb-4 border-b border-slate-800">
+                <div class="flex items-center gap-3">
+                    <i class="fa-solid fa-trophy text-2xl text-yellow-400"></i>
+                    <h3 class="arcade-font text-2xl text-white">LEADERBOARD TOP SISWA</h3>
+                </div>
+                <button onclick="closeModal('leaderboard-modal')" class="text-slate-400 hover:text-white p-2 text-xl">
+                    <i class="fa-solid fa-xmark"></i>
+                </button>
+            </div>
+
+            <div class="my-4 max-h-[60vh] overflow-y-auto pr-1">
+                <div class="bg-slate-950 rounded-2xl border border-slate-800 overflow-hidden">
+                    <table class="w-full text-left text-xs text-slate-300">
+                        <thead class="bg-slate-900 text-yellow-400 font-bold uppercase border-b border-slate-800">
+                            <tr>
+                                <th class="p-3 text-center">#</th>
+                                <th class="p-3">Nama Siswa</th>
+                                <th class="p-3 text-center">Kesulitan</th>
+                                <th class="p-3 text-right">Skor</th>
+                            </tr>
+                        </thead>
+                        <tbody id="leaderboard-body" class="divide-y divide-slate-800">
+                            <!-- Dynamic Content -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <div class="pt-3 border-t border-slate-800 flex justify-between items-center">
+                <button onclick="clearLeaderboard()" class="text-xs text-red-400 hover:text-red-300 underline font-bold">Hapus Skor</button>
+                <button onclick="closeModal('leaderboard-modal')" class="px-5 py-2 bg-slate-800 text-white font-bold rounded-xl hover:bg-slate-700 text-xs">Tutup</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 3. HOW TO PLAY MODAL -->
+    <div id="how-to-modal" class="fixed inset-0 bg-slate-950/80 backdrop-blur-md z-50 flex items-center justify-center hidden p-4">
+        <div class="bg-slate-900 border-2 border-cyan-500/50 w-full max-w-2xl rounded-3xl p-6 flex flex-col shadow-2xl">
+            <div class="flex justify-between items-center pb-4 border-b border-slate-800">
+                <div class="flex items-center gap-3">
+                    <i class="fa-solid fa-circle-info text-2xl text-cyan-400"></i>
+                    <h3 class="arcade-font text-2xl text-white">CARA BERMAIN</h3>
+                </div>
+                <button onclick="closeModal('how-to-modal')" class="text-slate-400 hover:text-white p-2 text-xl">
+                    <i class="fa-solid fa-xmark"></i>
+                </button>
+            </div>
+
+            <div class="my-4 space-y-4 text-slate-300 text-sm overflow-y-auto max-h-[60vh] pr-2">
+                <div class="flex items-start gap-4 bg-slate-950 p-3.5 rounded-2xl border border-slate-800">
+                    <div class="bg-purple-600 text-white rounded-xl p-3 font-bold text-lg">1</div>
+                    <div>
+                        <h4 class="font-bold text-white mb-1">Berdiri di Depan Kamera</h4>
+                        <p class="text-xs text-slate-400">Pastikan tubuh dan wajah kamu berada di tengah kamera terlebih dahulu.</p>
+                    </div>
+                </div>
+
+                <div class="flex items-start gap-4 bg-slate-950 p-3.5 rounded-2xl border border-slate-800">
+                    <div class="bg-blue-600 text-white rounded-xl p-3 font-bold text-lg">A</div>
+                    <div>
+                        <h4 class="font-bold text-white mb-1">Pilih Jawaban A (Berpindah ke Kanan)</h4>
+                        <p class="text-xs text-slate-400">Geser atau melangkah ke <strong>Sebelah Kanan Layar</strong> hingga tubuh dan wajahmu sepenuhnya berada pada area Zona A.</p>
+                    </div>
+                </div>
+
+                <div class="flex items-start gap-4 bg-slate-950 p-3.5 rounded-2xl border border-slate-800">
+                    <div class="bg-pink-600 text-white rounded-xl p-3 font-bold text-lg">B</div>
+                    <div>
+                        <h4 class="font-bold text-white mb-1">Pilih Jawaban B (Berpindah ke Kiri)</h4>
+                        <p class="text-xs text-slate-400">Geser atau melangkah ke <strong>Sebelah Kiri Layar</strong> hingga tubuh dan wajahmu sepenuhnya berada pada area Zona B.</p>
+                    </div>
+                </div>
+
+                <div class="flex items-start gap-4 bg-slate-950 p-3.5 rounded-2xl border border-slate-800">
+                    <div class="bg-emerald-500 text-slate-900 rounded-xl p-3 font-bold text-lg">2s</div>
+                    <div>
+                        <h4 class="font-bold text-white mb-1">Tahan Posisi 2 Detik (Lock-in)</h4>
+                        <p class="text-xs text-slate-400">Bertahanlah pada zona pilihanmu selama 2 detik untuk mengunci dan mengirim jawaban!</p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="pt-3 border-t border-slate-800 flex justify-end">
+                <button onclick="closeModal('how-to-modal')" class="px-6 py-2.5 bg-cyan-500 text-slate-950 font-bold rounded-xl hover:bg-cyan-400 text-sm">Paham, Mari Bermain!</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 4. FEEDBACK DIALOG OVERLAY (CORRECT / INCORRECT) -->
+    <div id="feedback-modal" class="fixed inset-0 bg-slate-950/80 backdrop-blur-md z-50 flex items-center justify-center hidden p-4">
+        <div id="feedback-card" class="w-full max-w-lg bg-slate-900 border-4 rounded-3xl p-6 text-center transform transition-all duration-300 scale-95 shadow-2xl">
+            <div id="feedback-icon-wrap" class="w-20 h-20 mx-auto rounded-full flex items-center justify-center text-4xl mb-4">
+                <i id="feedback-icon" class="fa-solid fa-check"></i>
+            </div>
+            <h3 id="feedback-title" class="arcade-font text-3xl md:text-4xl mb-2">BENAR!</h3>
+            <div id="feedback-bonus" class="hidden inline-block bg-yellow-400 text-slate-900 px-3 py-1 rounded-full text-xs font-black uppercase mb-3 animate-pulse">
+                ⚡ SPEED BONUS +5 POIN!
+            </div>
+            <div class="bg-slate-950 p-4 rounded-2xl border border-slate-800 mb-6 text-left">
+                <span class="text-[11px] font-bold text-slate-400 uppercase block mb-1">Pembahasan:</span>
+                <p id="feedback-explanation" class="text-sm text-slate-200">Penjelasan detail soal...</p>
+            </div>
+            <button onclick="nextQuestion()" class="arcade-font w-full py-3.5 rounded-xl bg-gradient-to-r from-purple-500 to-pink-500 text-white text-lg hover:brightness-110 transition shadow-lg">
+                SOAL BERIKUTNYA <i class="fa-solid fa-arrow-right ml-2"></i>
+            </button>
+        </div>
+    </div>
+
+    <!-- ==================== FOOTER ==================== -->
+    <footer class="w-full max-w-7xl px-4 py-3 text-center text-xs text-slate-500 z-10 border-t border-slate-800/60">
+        MOVE TO ANSWER! &copy; 2026 - Educational Camera Motion Game. Powered by MediaPipe Pose AI.
+    </footer>
+
+    <!-- ==================== JAVASCRIPT LOGIC ==================== -->
+    <script>
+        /* ----------------------------------------------------
+           1. GAME STATE & CONSTANTS (2 CHOICES DEFAULT)
+        ---------------------------------------------------- */
+        const DEFAULT_QUESTIONS = [
+            {
+                id: 'q1',
+                text: 'Apakah Jantung merupakan organ utama manusia yang berfungsi memompa darah?',
+                options: { A: 'BENAR (Jantung)', B: 'SALAH (Bukan Jantung)' },
+                correct: 'A',
+                explanation: 'Benar! Jantung adalah organ berotot yang memompa darah ke seluruh tubuh melalui sistem sirkulasi.',
+                subject: 'IPA',
+                difficulty: 'easy'
+            },
+            {
+                id: 'q2',
+                text: 'Berapakah hasil dari 15 + 25 x 2 ?',
+                options: { A: '65', B: '80' },
+                correct: 'A',
+                explanation: 'Berdasarkan hirarki matematika, perkalian dilakukan terlebih dahulu: 25 x 2 = 50, lalu 15 + 50 = 65.',
+                subject: 'MATEMATIKA',
+                difficulty: 'easy'
+            },
+            {
+                id: 'q3',
+                text: 'Proses tumbuhan hijau membuat makanan sendiri dengan bantuan sinar matahari adalah Fotosintesis.',
+                options: { A: 'BENAR', B: 'SALAH' },
+                correct: 'A',
+                explanation: 'Benar, Fotosintesis adalah proses tumbuhan hijau mengolah makanan dengan air, CO2, dan sinar matahari.',
+                subject: 'IPA',
+                difficulty: 'easy'
+            },
+            {
+                id: 'q4',
+                text: 'Candi Borobudur yang megah terletak di Provinsi Jawa Barat.',
+                options: { A: 'BENAR', B: 'SALAH (Jawa Tengah)' },
+                correct: 'B',
+                explanation: 'Salah! Candi Borobudur terletak di Kabupaten Magelang, Provinsi Jawa Tengah.',
+                subject: 'IPS',
+                difficulty: 'medium'
+            },
+            {
+                id: 'q5',
+                text: 'Gas terbanyak yang terkandung di dalam atmosfer bumi adalah Gas Oksigen.',
+                options: { A: 'BENAR (Oksigen)', B: 'SALAH (Nitrogen)' },
+                correct: 'B',
+                explanation: 'Salah! Gas terbanyak di atmosfer adalah Nitrogen (78%), sedangkan Oksigen sekitar 21%.',
+                subject: 'IPA',
+                difficulty: 'medium'
+            }
+        ];
+
+        let questions = [];
+        let currentGameQuestions = [];
+        let currentQuestionIndex = 0;
+        let score = 0;
+        let streak = 0;
+        let correctCount = 0;
+        let incorrectCount = 0;
+        let selectedDifficulty = 'easy'; // easy (15s), medium (10s), hard (7s)
+        let playerStats = { name: 'Siswa', totalTime: 0 };
+
+        // Timer Vars
+        let timerInterval = null;
+        let timeRemaining = 15;
+        let maxTime = 15;
+        let questionStartTime = 0;
+
+        // Pose & Canvas Vars
+        let videoElement = null;
+        let canvasElement = null;
+        let canvasCtx = null;
+        let poseDetector = null;
+        let cameraUtils = null;
+        let isCameraMirror = true;
+        let isSimulatedMode = false;
+
+        // Dwell / Hold State
+        let activeZone = null; // 'A' (Right) or 'B' (Left) or null
+        let zoneHoverStartTime = null;
+        const HOLD_DURATION_MS = 1800; // 1.8 seconds to hold answer
+        let calibrationOffset = { x: 0, y: 0 };
+        let currentHeadPoint = { x: 0.5, y: 0.5 }; // normalized 0-1
+
+        // Audio System (Web Audio API Synthesizer)
+        let audioCtx = null;
+        let audioEnabled = true;
+
+        /* ----------------------------------------------------
+           2. INITIALIZATION & STORAGE
+        ---------------------------------------------------- */
+        window.onload = function() {
+            initStorage();
+            initAudio();
+            setupCanvas();
+            initMediaPipePose();
+            renderQuestionsTable();
+            renderLeaderboard();
+        };
+
+        function initStorage() {
+            const savedQ = localStorage.getItem('mta_questions_2z');
+            if (savedQ) {
+                try { questions = JSON.parse(savedQ); } catch(e) { questions = [...DEFAULT_QUESTIONS]; }
+            } else {
+                questions = [...DEFAULT_QUESTIONS];
+                saveQuestionsToStorage();
+            }
+        }
+
+        function saveQuestionsToStorage() {
+            localStorage.setItem('mta_questions_2z', JSON.stringify(questions));
+        }
+
+        /* ----------------------------------------------------
+           3. AUDIO SYNTHESIZER (WEB AUDIO API)
+        ---------------------------------------------------- */
+        function initAudio() {
+            try {
+                const AudioContext = window.AudioContext || window.webkitAudioContext;
+                audioCtx = new AudioContext();
+            } catch(e) {
+                console.log('Web Audio API not supported');
+            }
+        }
+
+        function playSound(type) {
+            if (!audioEnabled || !audioCtx) return;
+            if (audioCtx.state === 'suspended') {
+                audioCtx.resume();
+            }
+
+            const now = audioCtx.currentTime;
+
+            if (type === 'beep') {
+                const osc = audioCtx.createOscillator();
+                const gain = audioCtx.createGain();
+                osc.type = 'sine';
+                osc.frequency.setValueAtTime(600, now);
+                gain.gain.setValueAtTime(0.05, now);
+                gain.gain.exponentialRampToValueAtTime(0.001, now + 0.1);
+                osc.connect(gain);
+                gain.connect(audioCtx.destination);
+                osc.start(now);
+                osc.stop(now + 0.1);
+            } else if (type === 'hover') {
+                const osc = audioCtx.createOscillator();
+                const gain = audioCtx.createGain();
+                osc.type = 'triangle';
+                osc.frequency.setValueAtTime(440, now);
+                osc.frequency.exponentialRampToValueAtTime(880, now + 0.15);
+                gain.gain.setValueAtTime(0.08, now);
+                gain.gain.exponentialRampToValueAtTime(0.001, now + 0.15);
+                osc.connect(gain);
+                gain.connect(audioCtx.destination);
+                osc.start(now);
+                osc.stop(now + 0.15);
+            } else if (type === 'correct') {
+                [523.25, 659.25, 783.99, 1046.50].forEach((freq, idx) => {
+                    const osc = audioCtx.createOscillator();
+                    const gain = audioCtx.createGain();
+                    osc.type = 'sine';
+                    osc.frequency.setValueAtTime(freq, now + (idx * 0.08));
+                    gain.gain.setValueAtTime(0.1, now + (idx * 0.08));
+                    gain.gain.exponentialRampToValueAtTime(0.001, now + (idx * 0.08) + 0.3);
+                    osc.connect(gain);
+                    gain.connect(audioCtx.destination);
+                    osc.start(now + (idx * 0.08));
+                    osc.stop(now + (idx * 0.08) + 0.3);
+                });
+            } else if (type === 'incorrect') {
+                const osc = audioCtx.createOscillator();
+                const gain = audioCtx.createGain();
+                osc.type = 'sawtooth';
+                osc.frequency.setValueAtTime(180, now);
+                osc.frequency.linearRampToValueAtTime(110, now + 0.4);
+                gain.gain.setValueAtTime(0.15, now);
+                gain.gain.exponentialRampToValueAtTime(0.001, now + 0.4);
+                osc.connect(gain);
+                gain.connect(audioCtx.destination);
+                osc.start(now);
+                osc.stop(now + 0.4);
+            }
+        }
+
+        function toggleAudio() {
+            audioEnabled = !audioEnabled;
+            const btn = document.getElementById('audio-btn');
+            if (audioEnabled) {
+                btn.classList.remove('text-slate-500');
+                btn.classList.add('text-yellow-400');
+                showToast('Audio Ditingkatkan');
+            } else {
+                btn.classList.remove('text-yellow-400');
+                btn.classList.add('text-slate-500');
+                showToast('Audio Dimatikan');
+            }
+        }
+
+        /* ----------------------------------------------------
+           4. MEDIAPIPE POSE & CAMERA SYSTEM
+        ---------------------------------------------------- */
+        function setupCanvas() {
+            videoElement = document.getElementById('webcam-video');
+            canvasElement = document.getElementById('game-canvas');
+            canvasCtx = canvasElement.getContext('2d');
+
+            window.addEventListener('resize', resizeCanvas);
+            resizeCanvas();
+
+            // Fallback Mouse Simulation Listener
+            canvasElement.addEventListener('mousemove', (e) => {
+                if (isSimulatedMode) {
+                    const rect = canvasElement.getBoundingClientRect();
+                    currentHeadPoint.x = (e.clientX - rect.left) / rect.width;
+                    currentHeadPoint.y = (e.clientY - rect.top) / rect.height;
+                }
+            });
+        }
+
+        function resizeCanvas() {
+            if (canvasElement) {
+                canvasElement.width = canvasElement.clientWidth || 960;
+                canvasElement.height = canvasElement.clientHeight || 540;
+            }
+        }
+
+        function initMediaPipePose() {
+            poseDetector = new Pose({
+                locateFile: (file) => `https://cdn.jsdelivr.net/npm/@mediapipe/pose/${file}`
+            });
+
+            poseDetector.setOptions({
+                modelComplexity: 1,
+                smoothLandmarks: true,
+                enableSegmentation: false,
+                minDetectionConfidence: 0.5,
+                minTrackingConfidence: 0.5
+            });
+
+            poseDetector.onResults(onPoseResults);
+
+            // Robust Camera Initialization with Timeout Handling
+            startCameraWithFallback();
+        }
+
+        async function startCameraWithFallback() {
+            const statusText = document.getElementById('camera-status-text');
+
+            try {
+                // Request media stream directly with standard browser API first
+                if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
+                    const stream = await navigator.mediaDevices.getUserMedia({
+                        video: { width: { ideal: 1280 }, height: { ideal: 720 }, facingMode: 'user' }
+                    });
+                    videoElement.srcObject = stream;
+                    await videoElement.play();
+                }
+
+                // Setup MediaPipe Camera Utility
+                cameraUtils = new Camera(videoElement, {
+                    onFrame: async () => {
+                        if (videoElement.readyState >= 2) {
+                            await poseDetector.send({ image: videoElement });
+                        }
+                    },
+                    width: 1280,
+                    height: 720
+                });
+
+                // Promise race to prevent infinite hanging timeout on camera acquisition
+                const cameraStartPromise = cameraUtils.start();
+                const timeoutPromise = new Promise((_, reject) => 
+                    setTimeout(() => reject(new Error('Camera startup timeout (6s)')), 6000)
+                );
+
+                await Promise.race([cameraStartPromise, timeoutPromise]);
+                document.getElementById('camera-loading').classList.add('hidden');
+
+            } catch (err) {
+                console.warn("Failed to acquire camera feed or timed out:", err);
+                if (statusText) {
+                    statusText.textContent = "Kamera tidak merespon. Mengaktifkan Mode Simulasi...";
+                }
+                setTimeout(() => {
+                    enableSimulationMode();
+                }, 800);
+            }
+        }
+
+        function enableSimulationMode() {
+            isSimulatedMode = true;
+            document.getElementById('camera-loading').classList.add('hidden');
+            document.getElementById('simulation-badge').classList.remove('hidden');
+            showToast('Mode Simulasi Aktif: Gerakkan Mouse / Sentuh Layar Kiri atau Kanan!');
+        }
+
+        function toggleCameraMirror() {
+            isCameraMirror = !isCameraMirror;
+            showToast(isCameraMirror ? 'Mode Kamera: Cermin (Mirror)' : 'Mode Kamera: Normal');
+        }
+
+        function recalibratePose() {
+            calibrationOffset.x = 0.5 - currentHeadPoint.x;
+            calibrationOffset.y = 0.5 - currentHeadPoint.y;
+            showToast('Kamera Dikalibrasi ke Posisi Tengah!');
+        }
+
+        /* ----------------------------------------------------
+           5. POSE TRACKING & 2 ZONES EVALUATION (A: RIGHT, B: LEFT)
+        ---------------------------------------------------- */
+        function onPoseResults(results) {
+            if (document.getElementById('game-screen').classList.contains('hidden')) return;
+
+            canvasCtx.save();
+            canvasCtx.clearRect(0, 0, canvasElement.width, canvasElement.height);
+
+            // Draw Video Feed
+            if (results.image) {
+                if (isCameraMirror) {
+                    canvasCtx.translate(canvasElement.width, 0);
+                    canvasCtx.scale(-1, 1);
+                }
+                canvasCtx.drawImage(results.image, 0, 0, canvasElement.width, canvasElement.height);
+                if (isCameraMirror) {
+                    canvasCtx.setTransform(1, 0, 0, 1, 0, 0);
+                }
+            }
+
+            // Extract Body Center Point (Nose / Head position)
+            if (results.poseLandmarks) {
+                const nose = results.poseLandmarks[0];
+                if (nose && nose.visibility > 0.4) {
+                    let nx = nose.x;
+                    if (isCameraMirror) {
+                        nx = 1 - nx; // mirror horizontal inversion
+                    }
+                    currentHeadPoint.x = nx + calibrationOffset.x;
+                    currentHeadPoint.y = nose.y + calibrationOffset.y;
+                }
+
+                drawPoseSkeleton(results.poseLandmarks);
+            }
+
+            // Evaluate & Render 2 Zones (A on RIGHT, B on LEFT)
+            const detectedZone = updateAndDrawTwoZones(currentHeadPoint.x, currentHeadPoint.y);
+
+            // Process Hold Dwell Timer Logic
+            processDwellTimer(detectedZone);
+
+            canvasCtx.restore();
+        }
+
+        function drawPoseSkeleton(landmarks) {
+            const joints = [0, 11, 12, 13, 14];
+            joints.forEach(idx => {
+                const lm = landmarks[idx];
+                if (lm && lm.visibility > 0.4) {
+                    let lx = lm.x;
+                    if (isCameraMirror) lx = 1 - lx;
+                    const x = lx * canvasElement.width;
+                    const y = lm.y * canvasElement.height;
+
+                    canvasCtx.beginPath();
+                    canvasCtx.arc(x, y, idx === 0 ? 12 : 8, 0, 2 * Math.PI);
+                    canvasCtx.fillStyle = idx === 0 ? '#FDCB6E' : '#6C5CE7';
+                    canvasCtx.fill();
+                    canvasCtx.lineWidth = 3;
+                    canvasCtx.strokeStyle = '#FFFFFF';
+                    canvasCtx.stroke();
+                }
+            });
+        }
+
+        function updateAndDrawTwoZones(hx, hy) {
+            const w = canvasElement.width;
+            const h = canvasElement.height;
+
+            const q = currentGameQuestions[currentQuestionIndex];
+            const opts = q ? q.options : { A: 'Jawaban A', B: 'Jawaban B' };
+
+            // 2 ZONES DIVISION:
+            // ZONE B: LEFT Half (x: 0.0 to 0.45)
+            // NEUTRAL MIDDLE: (x: 0.45 to 0.55)
+            // ZONE A: RIGHT Half (x: 0.55 to 1.0)
+            const zones = [
+                {
+                    id: 'B',
+                    title: 'JAWABAN B (KIRI)',
+                    name: opts.B,
+                    x: 0, y: 0, w: 0.45, h: 1.0,
+                    color: 'rgba(236, 72, 153, 0.35)',
+                    activeColor: 'rgba(236, 72, 153, 0.65)',
+                    border: '#EC4899',
+                    badgeBg: '#DB2777'
+                },
+                {
+                    id: 'A',
+                    title: 'JAWABAN A (KANAN)',
+                    name: opts.A,
+                    x: 0.55, y: 0, w: 0.45, h: 1.0,
+                    color: 'rgba(59, 130, 246, 0.35)',
+                    activeColor: 'rgba(59, 130, 246, 0.65)',
+                    border: '#3B82F6',
+                    badgeBg: '#2563EB'
+                }
+            ];
+
+            let hoveredZoneId = null;
+
+            zones.forEach(z => {
+                const isHovered = (hx >= z.x && hx <= z.x + z.w);
+                if (isHovered) hoveredZoneId = z.id;
+
+                const zx = z.x * w;
+                const zy = z.y * h;
+                const zw = z.w * w;
+                const zh = z.h * h;
+
+                // Draw Zone Box Background
+                canvasCtx.fillStyle = isHovered ? z.activeColor : z.color;
+                canvasCtx.fillRect(zx + 15, zy + 15, zw - 30, zh - 30);
+
+                // Draw Border
+                canvasCtx.lineWidth = isHovered ? 6 : 3;
+                canvasCtx.strokeStyle = z.border;
+                canvasCtx.strokeRect(zx + 15, zy + 15, zw - 30, zh - 30);
+
+                // Draw Zone Badge Icon (A / B)
+                const badgeRadius = 32;
+                const badgeX = zx + (zw / 2);
+                const badgeY = zy + 70;
+
+                canvasCtx.beginPath();
+                canvasCtx.arc(badgeX, badgeY, badgeRadius, 0, 2 * Math.PI);
+                canvasCtx.fillStyle = z.badgeBg;
+                canvasCtx.fill();
+                canvasCtx.lineWidth = 3;
+                canvasCtx.strokeStyle = '#FFFFFF';
+                canvasCtx.stroke();
+
+                canvasCtx.fillStyle = '#FFFFFF';
+                canvasCtx.font = 'bold 30px "Fredoka One", cursive';
+                canvasCtx.textAlign = 'center';
+                canvasCtx.textBaseline = 'middle';
+                canvasCtx.fillText(z.id, badgeX, badgeY);
+
+                // Draw Label Header
+                canvasCtx.fillStyle = '#FDCB6E';
+                canvasCtx.font = 'bold 16px "Fredoka One", cursive';
+                canvasCtx.fillText(z.title, badgeX, badgeY + 50);
+
+                // Draw Option Text Box inside zone
+                canvasCtx.fillStyle = '#FFFFFF';
+                canvasCtx.font = 'bold 22px "Outfit", sans-serif';
+                canvasCtx.shadowColor = 'rgba(0, 0, 0, 0.9)';
+                canvasCtx.shadowBlur = 8;
+                
+                // Text Wrapping
+                wrapText(canvasCtx, z.name || '', badgeX, zy + (zh / 2) + 20, zw - 60, 28);
+                canvasCtx.shadowBlur = 0;
+            });
+
+            // Draw Neutral Middle Line / Zone Divider
+            canvasCtx.setLineDash([8, 8]);
+            canvasCtx.strokeStyle = 'rgba(255, 255, 255, 0.3)';
+            canvasCtx.lineWidth = 2;
+            canvasCtx.beginPath();
+            canvasCtx.moveTo(w * 0.5, 0);
+            canvasCtx.lineTo(w * 0.5, h);
+            canvasCtx.stroke();
+            canvasCtx.setLineDash([]); // reset
+
+            // Draw Student Head Point Indicator (Pointer)
+            const px = hx * w;
+            const py = hy * h;
+
+            canvasCtx.beginPath();
+            canvasCtx.arc(px, py, 22, 0, 2 * Math.PI);
+            canvasCtx.fillStyle = 'rgba(255, 255, 255, 0.9)';
+            canvasCtx.fill();
+            canvasCtx.lineWidth = 4;
+            canvasCtx.strokeStyle = '#6C5CE7';
+            canvasCtx.stroke();
+
+            canvasCtx.beginPath();
+            canvasCtx.arc(px, py, 8, 0, 2 * Math.PI);
+            canvasCtx.fillStyle = '#6C5CE7';
+            canvasCtx.fill();
+
+            return hoveredZoneId;
+        }
+
+        function wrapText(ctx, text, x, y, maxWidth, lineHeight) {
+            const words = text.split(' ');
+            let line = '';
+            let currentY = y;
+
+            for (let n = 0; n < words.length; n++) {
+                const testLine = line + words[n] + ' ';
+                const metrics = ctx.measureText(testLine);
+                const testWidth = metrics.width;
+                if (testWidth > maxWidth && n > 0) {
+                    ctx.fillText(line, x, currentY);
+                    line = words[n] + ' ';
+                    currentY += lineHeight;
+                } else {
+                    line = testLine;
+                }
+            }
+            ctx.fillText(line, x, currentY);
+        }
+
+        /* ----------------------------------------------------
+           6. DWELL HOLD TIMER LOGIC
+        ---------------------------------------------------- */
+        function processDwellTimer(zoneId) {
+            const holdBar = document.getElementById('hold-progress-bar');
+            const holdName = document.getElementById('hold-target-name');
+
+            if (!zoneId) {
+                activeZone = null;
+                zoneHoverStartTime = null;
+                holdBar.style.width = '0%';
+                holdName.textContent = '-';
+                return;
+            }
+
+            if (activeZone !== zoneId) {
+                activeZone = zoneId;
+                zoneHoverStartTime = Date.now();
+                playSound('hover');
+            }
+
+            const elapsed = Date.now() - zoneHoverStartTime;
+            const percent = Math.min(100, (elapsed / HOLD_DURATION_MS) * 100);
+
+            holdBar.style.width = percent + '%';
+            holdName.textContent = `ZONA ${zoneId}`;
+
+            if (elapsed >= HOLD_DURATION_MS) {
+                const chosen = activeZone;
+                activeZone = null;
+                zoneHoverStartTime = null;
+                holdBar.style.width = '0%';
+                submitAnswer(chosen);
+            }
+        }
+
+        /* ----------------------------------------------------
+           7. GAME FLOW & QUESTION LOGIC
+        ---------------------------------------------------- */
+        function setDifficulty(diff) {
+            selectedDifficulty = diff;
+            document.querySelectorAll('.diff-btn').forEach(btn => {
+                btn.className = 'diff-btn py-2.5 rounded-xl font-bold text-sm bg-slate-800 text-slate-300 hover:bg-slate-700';
+            });
+            const activeBtn = document.getElementById(`diff-${diff}`);
+            if (diff === 'easy') {
+                activeBtn.className = 'diff-btn py-2.5 rounded-xl font-bold text-sm bg-emerald-600 text-white shadow-lg border-2 border-emerald-400';
+            } else if (diff === 'medium') {
+                activeBtn.className = 'diff-btn py-2.5 rounded-xl font-bold text-sm bg-yellow-600 text-white shadow-lg border-2 border-yellow-400';
+            } else {
+                activeBtn.className = 'diff-btn py-2.5 rounded-xl font-bold text-sm bg-pink-600 text-white shadow-lg border-2 border-pink-400';
+            }
+        }
+
+        function startGame() {
+            const nameInput = document.getElementById('player-name').value.trim();
+            playerStats.name = nameInput || 'Siswa Pintar';
+
+            currentGameQuestions = [...questions].sort(() => 0.5 - Math.random()).slice(0, 5);
+            if (currentGameQuestions.length === 0) {
+                showToast('Belum ada soal! Buka Teacher Mode untuk menambah soal.');
+                return;
+            }
+
+            currentQuestionIndex = 0;
+            score = 0;
+            streak = 0;
+            correctCount = 0;
+            incorrectCount = 0;
+            playerStats.totalTime = 0;
+
+            updateHeaderStats();
+            showScreen('game-screen');
+            loadQuestion();
+        }
+
+        function loadQuestion() {
+            if (currentQuestionIndex >= currentGameQuestions.length) {
+                endGame();
+                return;
+            }
+
+            const q = currentGameQuestions[currentQuestionIndex];
+            document.getElementById('question-progress').textContent = `${currentQuestionIndex + 1} / ${currentGameQuestions.length}`;
+            document.getElementById('question-text').textContent = q.text;
+            document.getElementById('subject-tag').textContent = q.subject || 'UMUM';
+
+            if (selectedDifficulty === 'easy') maxTime = 15;
+            else if (selectedDifficulty === 'medium') maxTime = 10;
+            else maxTime = 7;
+
+            timeRemaining = maxTime;
+            questionStartTime = Date.now();
+            startQuestionTimer();
+        }
+
+        function startQuestionTimer() {
+            clearInterval(timerInterval);
+            updateTimerUI();
+
+            timerInterval = setInterval(() => {
+                timeRemaining--;
+                updateTimerUI();
+
+                if (timeRemaining <= 3 && timeRemaining > 0) {
+                    playSound('beep');
+                }
+
+                if (timeRemaining <= 0) {
+                    clearInterval(timerInterval);
+                    submitAnswer(null);
+                }
+            }, 1000);
+        }
+
+        function updateTimerUI() {
+            const timerText = document.getElementById('timer-text');
+            const timerBar = document.getElementById('timer-bar');
+
+            timerText.textContent = `${timeRemaining}s`;
+            const pct = (timeRemaining / maxTime) * 100;
+            timerBar.style.width = `${pct}%`;
+
+            if (pct < 30) {
+                timerBar.className = 'bg-gradient-to-r from-red-600 to-pink-600 h-full rounded-full transition-all duration-200 animate-pulse';
+            } else {
+                timerBar.className = 'bg-gradient-to-r from-pink-500 to-purple-500 h-full rounded-full transition-all duration-200';
+            }
+        }
+
+        function submitAnswer(userAnswer) {
+            clearInterval(timerInterval);
+            const timeTakenSec = Math.round((Date.now() - questionStartTime) / 1000);
+            playerStats.totalTime += timeTakenSec;
+
+            const q = currentGameQuestions[currentQuestionIndex];
+            const isCorrect = (userAnswer === q.correct);
+            let speedBonus = 0;
+
+            if (isCorrect) {
+                correctCount++;
+                streak++;
+                score += 10;
+
+                if (timeTakenSec <= 5) {
+                    speedBonus = 5;
+                    score += speedBonus;
+                }
+
+                playSound('correct');
+                triggerConfetti();
+            } else {
+                incorrectCount++;
+                streak = 0;
+                playSound('incorrect');
+            }
+
+            updateHeaderStats();
+            showFeedbackModal(isCorrect, q, speedBonus > 0);
+        }
+
+        function updateHeaderStats() {
+            document.getElementById('game-score').textContent = score;
+            document.getElementById('game-streak').textContent = `${streak}🔥`;
+        }
+
+        function showFeedbackModal(isCorrect, q, hasSpeedBonus) {
+            const modal = document.getElementById('feedback-modal');
+            const card = document.getElementById('feedback-card');
+            const iconWrap = document.getElementById('feedback-icon-wrap');
+            const icon = document.getElementById('feedback-icon');
+            const title = document.getElementById('feedback-title');
+            const bonusTag = document.getElementById('feedback-bonus');
+            const exp = document.getElementById('feedback-explanation');
+
+            if (isCorrect) {
+                card.className = 'w-full max-w-lg bg-slate-900 border-4 border-emerald-500 rounded-3xl p-6 text-center transform transition-all duration-300 scale-100 shadow-2xl';
+                iconWrap.className = 'w-20 h-20 mx-auto rounded-full flex items-center justify-center text-4xl mb-4 bg-emerald-500/20 text-emerald-400 border-2 border-emerald-400';
+                icon.className = 'fa-solid fa-check';
+                title.textContent = 'JAWABAN BENAR!';
+                title.className = 'arcade-font text-3xl md:text-4xl mb-2 text-emerald-400';
+            } else {
+                card.className = 'w-full max-w-lg bg-slate-900 border-4 border-red-500 rounded-3xl p-6 text-center transform transition-all duration-300 scale-100 shadow-2xl';
+                iconWrap.className = 'w-20 h-20 mx-auto rounded-full flex items-center justify-center text-4xl mb-4 bg-red-500/20 text-red-400 border-2 border-red-400';
+                icon.className = 'fa-solid fa-xmark';
+                title.textContent = 'KURANG TEPAT!';
+                title.className = 'arcade-font text-3xl md:text-4xl mb-2 text-red-400';
+            }
+
+            if (hasSpeedBonus) {
+                bonusTag.classList.remove('hidden');
+            } else {
+                bonusTag.classList.add('hidden');
+            }
+
+            exp.textContent = q.explanation || `Kunci Jawaban yang benar adalah Zona (${q.correct}).`;
+            modal.classList.remove('hidden');
+        }
+
+        function nextQuestion() {
+            document.getElementById('feedback-modal').classList.add('hidden');
+            currentQuestionIndex++;
+            loadQuestion();
+        }
+
+        /* ----------------------------------------------------
+           8. RESULT SCREEN & LEADERBOARD LOGIC
+        ---------------------------------------------------- */
+        function endGame() {
+            showScreen('result-screen');
+
+            const totalQ = currentGameQuestions.length;
+            const accuracy = Math.round((correctCount / totalQ) * 100) || 0;
+            const avgTime = (playerStats.totalTime / totalQ).toFixed(1);
+
+            document.getElementById('result-player-name').textContent = `Pemain: ${playerStats.name}`;
+            document.getElementById('res-score').textContent = score;
+            document.getElementById('res-correct').textContent = `${correctCount}/${totalQ}`;
+            document.getElementById('res-accuracy').textContent = `${accuracy}%`;
+            document.getElementById('res-avg-time').textContent = `${avgTime}s`;
+
+            let badge = 'PEJUANG BELAJAR';
+            let motivation = 'Terus tingkatkan kecepatan dan fokusmu dalam menjawab!';
+
+            if (accuracy >= 90 && score >= 45) {
+                badge = '⚡ GRANDMASTER THINKER';
+                motivation = 'Luar biasa! Refleks dan pengetahuanmu sempurna bagaikan kilat!';
+            } else if (accuracy >= 70) {
+                badge = '🌟 SPEEDY SCHOLAR';
+                motivation = 'Kerja bagus! Kamu bergerak cepat dan menguasai materi dengan sangat baik!';
+            } else if (accuracy >= 50) {
+                badge = '🏃 MOTION LEARNER';
+                motivation = 'Hasil yang cukup baik! Terus berlatih agar respon tubuh dan pikiran semakin tajam!';
+            }
+
+            document.getElementById('result-badge').textContent = badge;
+            document.getElementById('result-motivation').textContent = `"${motivation}"`;
+
+            saveToLeaderboard({
+                name: playerStats.name,
+                score: score,
+                difficulty: selectedDifficulty.toUpperCase(),
+                date: new Date().toLocaleDateString()
+            });
+        }
+
+        function saveToLeaderboard(entry) {
+            let board = [];
+            try {
+                board = JSON.parse(localStorage.getItem('mta_leaderboard')) || [];
+            } catch(e) { board = []; }
+
+            board.push(entry);
+            board.sort((a, b) => b.score - a.score);
+            board = board.slice(0, 10);
+
+            localStorage.setItem('mta_leaderboard', JSON.stringify(board));
+            renderLeaderboard();
+        }
+
+        function renderLeaderboard() {
+            let board = [];
+            try {
+                board = JSON.parse(localStorage.getItem('mta_leaderboard')) || [];
+            } catch(e) { board = []; }
+
+            const body = document.getElementById('leaderboard-body');
+            body.innerHTML = '';
+
+            if (board.length === 0) {
+                body.innerHTML = `<tr><td colspan="4" class="p-4 text-center text-slate-500">Belum ada skor tersimpan. Klik Start Game untuk menjadi juara pertama!</td></tr>`;
+                return;
+            }
+
+            board.forEach((item, index) => {
+                const tr = document.createElement('tr');
+                tr.className = index === 0 ? 'bg-yellow-500/10 font-bold' : '';
+                tr.innerHTML = `
+                    <td class="p-3 text-center text-yellow-400 font-bold">${index + 1}</td>
+                    <td class="p-3 font-semibold text-white">${escapeHtml(item.name)}</td>
+                    <td class="p-3 text-center"><span class="px-2 py-0.5 rounded text-[10px] bg-slate-800 border border-slate-700">${item.difficulty}</span></td>
+                    <td class="p-3 text-right font-black text-yellow-400">${item.score}</td>
+                `;
+                body.appendChild(tr);
+            });
+        }
+
+        function clearLeaderboard() {
+            if (confirm('Hapus seluruh daftar skor Leaderboard?')) {
+                localStorage.removeItem('mta_leaderboard');
+                renderLeaderboard();
+                showToast('Leaderboard telah dibersihkan.');
+            }
+        }
+
+        /* ----------------------------------------------------
+           9. TEACHER MODE (CRUD QUESTION SYSTEM - 2 CHOICES)
+        ---------------------------------------------------- */
+        function openTeacherMode() {
+            renderQuestionsTable();
+            openModal('teacher-modal');
+        }
+
+        function renderQuestionsTable() {
+            document.getElementById('question-count').textContent = questions.length;
+            const tbody = document.getElementById('questions-table-body');
+            tbody.innerHTML = '';
+
+            if (questions.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="4" class="p-4 text-center text-slate-500">Belum ada soal. Tambahkan di atas.</td></tr>`;
+                return;
+            }
+
+            questions.forEach((q, idx) => {
+                const tr = document.createElement('tr');
+                tr.innerHTML = `
+                    <td class="p-3 max-w-xs truncate font-medium text-white" title="${escapeHtml(q.text)}">${idx + 1}. ${escapeHtml(q.text)}</td>
+                    <td class="p-3"><span class="px-2 py-0.5 rounded text-[10px] bg-purple-900/60 border border-purple-500/40 text-purple-200">${q.subject || 'UMUM'}</span></td>
+                    <td class="p-3 font-black text-yellow-400">Zona ${q.correct}</td>
+                    <td class="p-3 flex gap-2">
+                        <button onclick="editQuestion('${q.id}')" class="text-cyan-400 hover:text-cyan-300 p-1"><i class="fa-solid fa-pen"></i></button>
+                        <button onclick="deleteQuestion('${q.id}')" class="text-red-400 hover:text-red-300 p-1"><i class="fa-solid fa-trash"></i></button>
+                    </td>
+                `;
+                tbody.appendChild(tr);
+            });
+        }
+
+        function saveQuestion() {
+            const editId = document.getElementById('edit-q-id').value;
+            const text = document.getElementById('q-text').value.trim();
+            const optA = document.getElementById('q-opt-a').value.trim();
+            const optB = document.getElementById('q-opt-b').value.trim();
+            const correct = document.getElementById('q-correct').value;
+            const subject = document.getElementById('q-subject').value.trim() || 'UMUM';
+            const diff = document.getElementById('q-diff').value;
+            const explanation = document.getElementById('q-explanation').value.trim();
+
+            if (!text || !optA || !optB) {
+                showToast('Mohon lengkapi teks pertanyaan dan 2 pilihan jawaban (A & B)!');
+                return;
+            }
+
+            if (editId) {
+                const index = questions.findIndex(q => q.id === editId);
+                if (index !== -1) {
+                    questions[index] = {
+                        id: editId,
+                        text, options: { A: optA, B: optB },
+                        correct, subject, difficulty: diff, explanation
+                    };
+                    showToast('Soal berhasil diperbarui!');
+                }
+            } else {
+                const newId = 'q_' + Date.now();
+                questions.push({
+                    id: newId,
+                    text, options: { A: optA, B: optB },
+                    correct, subject, difficulty: diff, explanation
+                });
+                showToast('Soal baru berhasil ditambahkan!');
+            }
+
+            saveQuestionsToStorage();
+            resetQuestionForm();
+            renderQuestionsTable();
+        }
+
+        function editQuestion(id) {
+            const q = questions.find(item => item.id === id);
+            if (!q) return;
+
+            document.getElementById('edit-q-id').value = q.id;
+            document.getElementById('q-text').value = q.text;
+            document.getElementById('q-opt-a').value = q.options.A || '';
+            document.getElementById('q-opt-b').value = q.options.B || '';
+            document.getElementById('q-correct').value = q.correct;
+            document.getElementById('q-subject').value = q.subject || '';
+            document.getElementById('q-diff').value = q.difficulty || 'easy';
+            document.getElementById('q-explanation').value = q.explanation || '';
+
+            document.getElementById('form-title').innerHTML = `<i class="fa-solid fa-pen"></i> Edit Pertanyaan`;
+        }
+
+        function deleteQuestion(id) {
+            if (confirm('Hapus soal ini dari Bank Soal?')) {
+                questions = questions.filter(q => q.id !== id);
+                saveQuestionsToStorage();
+                renderQuestionsTable();
+                showToast('Soal telah dihapus.');
+            }
+        }
+
+        function resetQuestionForm() {
+            document.getElementById('edit-q-id').value = '';
+            document.getElementById('q-text').value = '';
+            document.getElementById('q-opt-a').value = '';
+            document.getElementById('q-opt-b').value = '';
+            document.getElementById('q-subject').value = '';
+            document.getElementById('q-explanation').value = '';
+            document.getElementById('form-title').innerHTML = `<i class="fa-solid fa-plus-circle"></i> Tambah Pertanyaan Baru (A & B)`;
+        }
+
+        function resetDefaultQuestions() {
+            if (confirm('Kembalikan Bank Soal ke daftar soal bawaan SMP (2 Pilihan)?')) {
+                questions = [...DEFAULT_QUESTIONS];
+                saveQuestionsToStorage();
+                renderQuestionsTable();
+                showToast('Soal direset ke default SMP!');
+            }
+        }
+
+        /* ----------------------------------------------------
+           10. CONFETTI ANIMATION ENGINE
+        ---------------------------------------------------- */
+        function triggerConfetti() {
+            const confettiCanvas = document.getElementById('confetti-canvas');
+            const ctx = confettiCanvas.getContext('2d');
+            confettiCanvas.width = window.innerWidth;
+            confettiCanvas.height = window.innerHeight;
+
+            const particles = [];
+            const colors = ['#FDCB6E', '#6C5CE7', '#FD79A8', '#00B894', '#0984E3'];
+
+            for (let i = 0; i < 80; i++) {
+                particles.push({
+                    x: window.innerWidth / 2,
+                    y: window.innerHeight / 2,
+                    vx: (Math.random() - 0.5) * 14,
+                    vy: (Math.random() - 0.7) * 14,
+                    size: Math.random() * 8 + 4,
+                    color: colors[Math.floor(Math.random() * colors.length)],
+                    rotation: Math.random() * 360,
+                    rSpeed: (Math.random() - 0.5) * 10
+                });
+            }
+
+            let animationFrame;
+            const startTime = Date.now();
+
+            function animateConfetti() {
+                ctx.clearRect(0, 0, confettiCanvas.width, confettiCanvas.height);
+                particles.forEach((p) => {
+                    p.x += p.vx;
+                    p.y += p.vy;
+                    p.vy += 0.3;
+                    p.rotation += p.rSpeed;
+
+                    ctx.save();
+                    ctx.translate(p.x, p.y);
+                    ctx.rotate((p.rotation * Math.PI) / 180);
+                    ctx.fillStyle = p.color;
+                    ctx.fillRect(-p.size / 2, -p.size / 2, p.size, p.size);
+                    ctx.restore();
+                });
+
+                if (Date.now() - startTime < 1800) {
+                    animationFrame = requestAnimationFrame(animateConfetti);
+                } else {
+                    ctx.clearRect(0, 0, confettiCanvas.width, confettiCanvas.height);
+                    cancelAnimationFrame(animationFrame);
+                }
+            }
+
+            animateConfetti();
+        }
+
+        /* ----------------------------------------------------
+           11. UI HELPER UTILITIES
+        ---------------------------------------------------- */
+        function showScreen(screenId) {
+            document.querySelectorAll('main > section').forEach(sec => sec.classList.add('hidden'));
+            document.getElementById(screenId).classList.remove('hidden');
+
+            if (screenId !== 'game-screen') {
+                clearInterval(timerInterval);
+            }
+        }
+
+        function openModal(modalId) {
+            document.getElementById(modalId).classList.remove('hidden');
+        }
+
+        function closeModal(modalId) {
+            document.getElementById(modalId).classList.add('hidden');
+        }
+
+        function showToast(msg) {
+            const toast = document.getElementById('toast');
+            document.getElementById('toast-message').textContent = msg;
+            toast.classList.remove('translate-x-full');
+
+            setTimeout(() => {
+                toast.classList.add('translate-x-full');
+            }, 3000);
+        }
+
+        function escapeHtml(str) {
+            if (!str) return '';
+            return str.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+        }
+    </script>
+</body>
+</html>
+```eod
+
+### Perubahan Utama yang Diterapkan:
+1. **Model 2 Zona Jawaban (Kiri & Kanan)**:
+   - **Jawaban A**: Terletak di area setengah layar **SEBELAH KANAN** (`x: 0.55 - 1.0`).
+   - **Jawaban B**: Terletak di area setengah layar **SEBELAH KIRI** (`x: 0.0 - 0.45`).
+   - **Area Netral**: Disediakan batas tengah (`x: 0.45 - 0.55`) untuk posisi awal siswa sebelum bergerak.
+2. **Deteksi Gerakan Siswa**: Siswa hanya perlu melangkah atau menggeser tubuh ke kanan (A) atau kiri (B) hingga indikator wajah/tubuh berada di dalam zona pilihan.
+3. **Teacher Mode 2 Pilihan**: Form input disesuaikan untuk menambahkan pertanyaan berbasis 2 opsi (Pilihan A & B) dengan kunci jawaban A (Kanan) atau B (Kiri).
